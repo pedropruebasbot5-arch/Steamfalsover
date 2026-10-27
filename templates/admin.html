@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#100b18">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% if is_admin %}Administración{% else %}Acceso de administración{% endif %} — SÑEAM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="account-page">
+    <header class="site-header">
+        <nav class="navbar" aria-label="Navegación principal">
+            <a class="logo" href="/" aria-label="SÑEAM, inicio"><span class="logo-mark">S</span>ÑEAM<span class="logo-period">.</span></a>
+            <span class="admin-badge">PANEL DE ADMINISTRACIÓN</span>
+            <a class="account-back" href="/">← Volver a la tienda</a>
+        </nav>
+    </header>
+    <main class="account-main admin-main">
+        {% if not is_admin %}
+        <section class="admin-login">
+            <span class="admin-lock" aria-hidden="true">✦</span>
+            <p class="section-kicker">Acceso restringido</p>
+            <h1>Panel de <span>administración.</span></h1>
+            <p>Resuelve la suma para gestionar ofertas y consultar las compras.</p>
+            {% if login_error %}
+            <p class="form-alert" role="alert">La respuesta no es correcta. Inténtalo de nuevo.</p>
+            {% endif %}
+            <form class="admin-login-form" method="post" action="{{ url_for('admin') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>¿Cuánto es {{ challenge_left }} + {{ challenge_right }}?<input type="number" name="answer" required inputmode="numeric" autofocus></label>
+                <button class="btn-primary" type="submit">Entrar al panel <span aria-hidden="true">→</span></button>
+            </form>
+        </section>
+        {% else %}
+        <div class="admin-topline">
+            <div><p class="section-kicker">Centro de control</p><h1>Tu tienda, <span>en tus manos.</span></h1></div>
+            <form method="post" action="{{ url_for('admin_logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-outline" type="submit">Cerrar sesión</button>
+            </form>
+        </div>
+
+        <section class="stats-grid" aria-label="Resumen de ventas">
+            <article class="stat-card"><span>VENTAS REGISTRADAS</span><strong>{{ total_ventas }}</strong><small>Pedidos en el sistema</small></article>
+            <article class="stat-card"><span>INGRESOS DE DEMOSTRACIÓN</span><strong>${{ ingresos }}</strong><small>MXN · no son cobros reales</small></article>
+            <article class="stat-card"><span>JUEGOS EN CATÁLOGO</span><strong>{{ juegos|length }}</strong><small>Disponibles en la tienda</small></article>
+        </section>
+
+        <section class="admin-section" id="productos">
+            <div class="admin-section-heading"><div><p class="section-kicker">Catálogo</p><h2>Administrar productos</h2></div><span>{{ juegos|length }} productos</span></div>
+            <form class="product-create-form" method="post" action="{{ url_for('create_product') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <h3>Agregar producto</h3>
+                <div class="product-form-grid">
+                    <label>Nombre<input type="text" name="titulo" maxlength="100" required placeholder="Nombre del producto"></label>
+                    <label>Precio (MXN)<input type="number" name="precio" min="0" step="1" required placeholder="599"></label>
+                    <label>Categoría<input type="text" name="tag" maxlength="40" required placeholder="Aventura"></label>
+                    <label class="product-description-field">Descripción<input type="text" name="description" maxlength="500" placeholder="Descripción breve"></label>
+                    <label>URL de imagen<input type="text" name="image_url" maxlength="1000" placeholder="https://... o /static/..."></label>
+                    <label>O subir imagen<input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"></label>
+                </div>
+                <button class="btn-primary" type="submit">Agregar al catálogo <span aria-hidden="true">→</span></button>
+                <p class="product-image-note">Puedes usar una URL o subir JPG, PNG, WEBP o GIF (máximo 6 MB).</p>
+            </form>
+            {% if juegos %}
+            <div class="product-admin-list">
+                {% for juego in juegos %}
+                <article class="product-admin-card">
+                    <img class="product-admin-preview" src="{{ juego.img }}" alt="Imagen de {{ juego.titulo }}" loading="lazy">
+                    <form class="product-edit-form" method="post" action="{{ url_for('update_product', game_id=juego.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="product-form-grid">
+                            <label>Nombre<input type="text" name="titulo" maxlength="100" value="{{ juego.titulo }}" required></label>
+                            <label>Precio (MXN)<input type="number" name="precio" min="0" step="1" value="{{ juego.precio }}" required></label>
+                            <label>Categoría<input type="text" name="tag" maxlength="40" value="{{ juego.tag }}" required></label>
+                            <label class="product-description-field">Descripción<input type="text" name="description" maxlength="500" value="{{ juego.desc }}"></label>
+                            <label>URL de imagen<input type="text" name="image_url" maxlength="1000" value="{{ juego.img }}" required></label>
+                            <label>Reemplazar imagen<input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"></label>
+                        </div>
+                        <button class="btn-outline" type="submit">Guardar cambios</button>
+                    </form>
+                    <form class="product-delete-form" method="post" action="{{ url_for('delete_product', game_id=juego.id) }}" onsubmit="return confirm('¿Eliminar este producto del catálogo?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn-danger" type="submit">Eliminar</button>
+                    </form>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="admin-empty">El catálogo está vacío. Agrega un producto usando el formulario de arriba.</div>
+            {% endif %}
+        </section>
+
+        <section class="admin-section" id="ofertas">
+            <div class="admin-section-heading"><div><p class="section-kicker">Promociones</p><h2>Gestionar ofertas</h2></div><span>Descuentos de 0 a 90%</span></div>
+            <div class="offer-admin-list">
+                {% for juego in juegos %}
+                <form class="offer-admin-row" method="post" action="{{ url_for('update_offer') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="game_id" value="{{ juego.id }}">
+                    <img src="{{ juego.img }}" alt="" loading="lazy">
+                    <div class="offer-admin-title"><strong>{{ juego.titulo }}</strong><span>${{ juego.precio }} MXN · {{ juego.tag }}</span></div>
+                    <label class="discount-field">Descuento<input type="number" name="discount" min="0" max="90" value="{{ juego.descuento }}" required><span>%</span></label>
+                    <button class="btn-outline save-offer" type="submit">Guardar</button>
+                </form>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="admin-section" id="ventas">
+            <div class="admin-section-heading"><div><p class="section-kicker">Actividad reciente</p><h2>Compras registradas</h2></div><span>Últimos 100 pedidos</span></div>
+            {% if ventas %}
+            <div class="sales-list">
+                {% for venta in ventas %}
+                <article class="sale-row">
+                    <div class="sale-order"><strong>{{ venta.customer_name }}</strong><span>{{ venta.email }}</span><small>{{ venta.order_id[:12]|upper }}</small></div>
+                    <div class="sale-games"><span>{{ venta.games|join(', ') }}</span><small>{{ venta.payment_method }} · {{ venta.created_at[:16].replace('T', ' ') }}</small></div>
+                    <strong class="sale-total">${{ venta.total }} <small>MXN</small></strong>
+                    <span class="sale-status">DEMOSTRACIÓN</span>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="admin-empty">Aún no hay compras. Las nuevas compras de demostración aparecerán aquí.</div>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+    <footer>
+        <a class="footer-logo" href="/">SÑEAM<span>.</span></a>
+        <p>Administración segura de tu tienda.</p>
+        <a class="admin-link" href="/">Volver al inicio</a>
+        <span>© 2026 SÑEAM</span>
+    </footer>
+</body>
+</html>

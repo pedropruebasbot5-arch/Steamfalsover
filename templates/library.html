@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#100b18">
+    <title>Mi biblioteca — SÑEAM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="account-page">
+    <header class="site-header">
+        <nav class="navbar" aria-label="Navegación principal">
+            <a class="logo" href="/" aria-label="SÑEAM, inicio"><span class="logo-mark">S</span>ÑEAM<span class="logo-period">.</span></a>
+            <div class="nav-links">
+                <a href="/#catalogo">Tienda</a>
+                <a href="/#ofertas">Ofertas</a>
+                <a class="active" href="{{ url_for('library') }}">Biblioteca</a>
+            </div>
+            <a class="account-back" href="{{ url_for('account') if session.get('user_id') else url_for('home') }}">{% if session.get('user_id') %}Mi cuenta{% else %}← Volver a la tienda{% endif %}</a>
+        </nav>
+    </header>
+    <main class="account-main">
+        <div class="account-heading">
+            <p class="section-kicker">Tu colección personal</p>
+            <h1>Mi <span>biblioteca.</span></h1>
+            <p>Aquí están tus juegos comprados, listos para tu próxima partida.</p>
+        </div>
+        {% if request.args.get('compra') == 'ok' %}
+        <div class="purchase-success" role="status">
+            <span>✓</span>
+            <div><strong>¡Compra registrada!</strong><p>Tu colección ya está actualizada. Recuerda: esta tienda está en modo demostración y no realizó ningún cobro.</p></div>
+        </div>
+        {% endif %}
+        {% if compras %}
+            {% for compra in compras %}
+            <section class="purchase-group">
+                <div class="purchase-group-heading">
+                    <div><span class="owned-label">EN TU BIBLIOTECA</span><h2>Pedido {{ compra.order_id[:8]|upper }}</h2></div>
+                    <div class="purchase-meta"><span>${{ compra.total }} MXN</span><time>{{ compra.created_at[:10] }}</time></div>
+                </div>
+                <div class="library-grid">
+                    {% for juego in compra.games %}
+                    <article class="library-card">
+                        <img src="{{ juego.img }}" alt="" loading="lazy">
+                        <div><span>{{ juego.tag }} · PC</span><h3>{{ juego.titulo }}</h3><p>Disponible en tu colección</p></div>
+                        <span class="owned-check" aria-label="Comprado">✓</span>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        {% else %}
+        <section class="library-empty">
+            <span class="empty-game-icon" aria-hidden="true">✦</span>
+            <h2>Tu próxima aventura te espera.</h2>
+            <p>Cuando compres un juego, aparecerá aquí automáticamente.</p>
+            <a class="btn-primary" href="/#catalogo">Explorar juegos <span aria-hidden="true">→</span></a>
+        </section>
+        {% endif %}
+    </main>
+    <footer>
+        <a class="footer-logo" href="/">SÑEAM<span>.</span></a>
+        <p>Un buen juego siempre encuentra su lugar.</p>
+        <a class="admin-link" href="{{ url_for('admin') }}">Administración</a>
+        <span>© 2026 SÑEAM · Hecho para jugar</span>
+    </footer>
+</body>
+</html>

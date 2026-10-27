@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#100b18">
+    <meta name="description" content="Descubre grandes juegos, ofertas especiales y nuevas aventuras en SÑEAM.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>SÑEAM — Tu próxima aventura empieza aquí</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="announcement">
+        <span class="announcement-dot"></span>
+        Ofertas especiales para tu próxima aventura
+        <a href="#ofertas">Ver ofertas <span aria-hidden="true">→</span></a>
+    </div>
+
+    <header class="site-header">
+        <nav class="navbar" aria-label="Navegación principal">
+            <a class="logo" href="/" aria-label="SÑEAM, inicio"><span class="logo-mark">S</span>ÑEAM<span class="logo-period">.</span></a>
+            <div class="nav-links">
+                <a href="#catalogo" class="active">Tienda</a>
+                <a href="#ofertas">Ofertas</a>
+                <a href="{{ url_for('library') }}">Biblioteca</a>
+                <a href="#comunidad">Comunidad</a>
+            </div>
+            <div class="nav-actions">
+                <label class="search-box">
+                    <span class="search-icon" aria-hidden="true">⌕</span>
+                    <input id="game-search" type="search" placeholder="Buscar juegos..." aria-label="Buscar juegos">
+                    <kbd>/</kbd>
+                </label>
+                <button class="cart-button" type="button" aria-label="Abrir carrito, 0 artículos">
+                    <span class="cart-icon" aria-hidden="true">▱</span>
+                    <span class="cart-label">Carrito</span>
+                    <span class="cart-count" aria-live="polite">0</span>
+                </button>
+                <a class="admin-nav-button" href="{{ url_for('admin') }}"><span aria-hidden="true">⚙</span> Panel</a>
+                <a class="account-nav-button" href="{{ url_for('account') }}" aria-label="{% if session.get('user_id') %}Mi cuenta{% else %}Iniciar sesión{% endif %}"><span aria-hidden="true">◉</span><span class="account-nav-label">{% if session.get('user_id') %}Mi cuenta{% else %}Entrar{% endif %}</span></a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="hero-art" aria-hidden="true"></div>
+            <div class="hero-shade" aria-hidden="true"></div>
+            <div class="hero-content">
+                <p class="eyebrow"><span class="eyebrow-line"></span> La selección de esta semana</p>
+                <h1 id="hero-title">Juega a lo<br>que te <span>mueve.</span></h1>
+                <p class="hero-sub">Grandes historias, nuevos mundos y ofertas que valen la partida. Tu próxima aventura está más cerca.</p>
+                <div class="hero-actions">
+                    <a class="btn-primary" href="#catalogo">Explorar juegos <span aria-hidden="true">→</span></a>
+                    <span class="hero-note">Nuevas ofertas cada semana</span>
+                </div>
+            </div>
+            <div class="hero-caption"><span>01</span> / DESTACADOS DE LA TEMPORADA</div>
+        </section>
+
+        {% if ofertas %}
+        <section class="offers-section" id="ofertas" aria-labelledby="offers-title">
+            <div class="offers-heading">
+                <div>
+                    <p class="section-kicker">Buenas partidas, mejores precios</p>
+                    <h2 id="offers-title">Ofertas <span>por tiempo limitado.</span></h2>
+                </div>
+                <span class="offers-live"><i></i> DISPONIBLES AHORA</span>
+            </div>
+            <div class="offers-grid">
+                {% for juego in ofertas %}
+                <article class="offer-card" data-game-detail="{{ url_for('game_detail', game_id=juego.id) }}" tabindex="0" aria-label="Ver detalles de {{ juego.titulo }}">
+                    <img src="{{ juego.img }}" alt="" loading="lazy">
+                    <div class="offer-overlay"></div>
+                    <span class="offer-discount">-{{ juego.descuento }}%</span>
+                    <div class="offer-info">
+                        <span>{{ juego.tag }} · PC</span>
+                        <h3>{{ juego.titulo }}</h3>
+                        <div><strong>${{ (juego.precio * (100 - juego.descuento) / 100) | int }} MXN</strong><del>${{ juego.precio }} MXN</del></div>
+                    </div>
+                    <button class="offer-add" type="button" data-add-game="{{ juego.id }}" aria-label="Añadir {{ juego.titulo }} al carrito">+</button>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="catalog-section" id="catalogo" aria-labelledby="catalog-title">
+            <div class="catalog-heading">
+                <div>
+                    <p class="section-kicker">Encuentra tu siguiente juego</p>
+                    <h2 id="catalog-title">La tienda <span>para jugar.</span></h2>
+                </div>
+                <p class="catalog-count"><span id="visible-count">{{ juegos|length }}</span> juegos para descubrir</p>
+            </div>
+
+            <div class="catalog-toolbar">
+                <div class="filters" role="group" aria-label="Filtrar juegos por categoría">
+                    <button class="chip active" type="button" data-filter="todos" aria-pressed="true">Todos</button>
+                    <button class="chip" type="button" data-filter="ofertas" aria-pressed="false">En oferta</button>
+                    <button class="chip" type="button" data-filter="RPG" aria-pressed="false">RPG</button>
+                    <button class="chip" type="button" data-filter="Acción" aria-pressed="false">Acción</button>
+                    <button class="chip" type="button" data-filter="Souls" aria-pressed="false">Souls</button>
+                    <button class="chip" type="button" data-filter="Aventura" aria-pressed="false">Aventura</button>
+                    <button class="chip" type="button" data-filter="Mundo Abierto" aria-pressed="false">Mundo abierto</button>
+                </div>
+                <span class="sort-label">Recomendados <span aria-hidden="true">⌄</span></span>
+            </div>
+
+            <section class="grid" aria-label="Juegos disponibles">
+                {% for juego in juegos %}
+                <article class="card" id="producto-{{ juego.id }}" data-game-detail="{{ url_for('game_detail', game_id=juego.id) }}" data-tag="{{ juego.tag }}" data-title="{{ juego.titulo|lower }}" data-discount="{{ juego.descuento }}" data-game-id="{{ juego.id }}" data-game-name="{{ juego.titulo }}" data-price="{{ juego.precio }}" data-final-price="{{ (juego.precio * (100 - juego.descuento) / 100) | int }}" tabindex="0" aria-label="Ver detalles de {{ juego.titulo }}">
+                    <div class="card-img">
+                        <img src="{{ juego.img }}" alt="" loading="lazy">
+                        {% if juego.descuento > 0 %}
+                        <span class="badge">-{{ juego.descuento }}%</span>
+                        {% endif %}
+                        <button class="quick-add" type="button" aria-label="Añadir {{ juego.titulo }} al carrito" data-add-game="{{ juego.id }}">+</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-meta"><span class="tag">{{ juego.tag }}</span><span class="platform">PC</span></div>
+                        <h3><a class="card-title-link" href="{{ url_for('game_detail', game_id=juego.id) }}">{{ juego.titulo }}</a></h3>
+                        <p>{{ juego.desc }}</p>
+                        <div class="product-reviews">
+                            <div class="review-summary"><strong>{% if juego.review_count %}★ {{ juego.average_rating }} / 5{% else %}Sin calificaciones{% endif %}</strong><span>{{ juego.review_count }} reseñas</span></div>
+                            <a class="review-login-link" href="{{ url_for('game_detail', game_id=juego.id) }}">Ver y calificar →</a>
+                        </div>
+                        <div class="price-row">
+                            <div class="price">
+                                {% if juego.descuento > 0 %}
+                                <span class="old">${{ juego.precio }} MXN</span>
+                                <span>${{ (juego.precio * (100 - juego.descuento) / 100) | int }} <small>MXN</small></span>
+                                {% else %}
+                                <span>${{ juego.precio }} <small>MXN</small></span>
+                                {% endif %}
+                            </div>
+                            <button class="btn-cart" type="button" data-add-game="{{ juego.id }}">Añadir <span aria-hidden="true">+</span></button>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+            <p class="empty-state" hidden>No encontramos juegos con esa búsqueda. Prueba con otro título o categoría.</p>
+        </section>
+
+        <section class="community-banner" id="comunidad">
+            <div class="community-mark" aria-hidden="true">S.</div>
+            <div>
+                <p class="section-kicker">El juego se disfruta más en compañía</p>
+                <h2>Siempre hay una partida más.</h2>
+                <p>Descubre juegos, encuentra tu próxima historia y comparte lo que estás jugando.</p>
+            </div>
+            <a href="#catalogo" class="community-link">Descubrir la tienda <span aria-hidden="true">→</span></a>
+        </section>
+    </main>
+
+    <dialog class="store-dialog" id="checkout-dialog" aria-labelledby="checkout-title">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar">×</button>
+        <div class="dialog-heading">
+            <p class="section-kicker">Todo listo para jugar</p>
+            <h2 id="checkout-title">Tu carrito</h2>
+        </div>
+        <div class="checkout-layout">
+            <div class="checkout-items" id="checkout-items"></div>
+            <form class="checkout-form" id="checkout-form">
+                <label>Nombre completo<input name="name" autocomplete="name" required minlength="2" maxlength="100" placeholder="Tu nombre"></label>
+                <label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label>
+                <label>Forma de pago
+                    <select name="payment_method" required>
+                        <option value="tarjeta">Tarjeta (demostración)</option>
+                        <option value="paypal">PayPal (demostración)</option>
+                        <option value="spei">SPEI (demostración)</option>
+                    </select>
+                </label>
+                <p class="payment-disclaimer">Modo de demostración: no se realiza ningún cobro. No introduzcas datos de tarjeta.</p>
+                <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
+                <div class="checkout-total"><span>Total</span><strong id="checkout-total">$0 MXN</strong></div>
+                <button class="btn-primary checkout-submit" type="submit">Confirmar compra <span aria-hidden="true">→</span></button>
+            </form>
+        </div>
+    </dialog>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <footer>
+        <a class="footer-logo" href="/">SÑEAM<span>.</span></a>
+        <p>Un buen juego siempre encuentra su lugar.</p>
+        <a class="admin-link" href="{{ url_for('admin') }}">Administración</a>
+        <span>© 2026 SÑEAM · Hecho para jugar</span>
+    </footer>
+
+    <script>
+        const chips = document.querySelectorAll('.chip');
+        const cards = document.querySelectorAll('.card');
+        const search = document.getElementById('game-search');
+        const visibleCount = document.getElementById('visible-count');
+        const emptyState = document.querySelector('.empty-state');
+        let activeFilter = 'todos';
+        const cartButton = document.querySelector('.cart-button');
+        const cartCount = document.querySelector('.cart-count');
+        const cartStorageKey = 'sneam-cart-v1';
+        const gamesById = new Map([...cards].map(card => [Number(card.dataset.gameId), {
+            id: Number(card.dataset.gameId),
+            title: card.dataset.gameName,
+            image: card.querySelector('img').src,
+            price: Number(card.dataset.finalPrice)
+        }]));
+        const checkoutDialog = document.getElementById('checkout-dialog');
+        const checkoutForm = document.getElementById('checkout-form');
+        let cart = readCart();
+        let toastTimer;
+
+        function readCart() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
+                if (!Array.isArray(stored)) return [];
+                return [...new Set(stored.filter(id => Number.isInteger(id) && gamesById.has(id)))];
+            } catch (error) {
+                console.error('No se pudo leer el carrito guardado.', error);
+                return [];
+            }
+        }
+
+        function saveCart() {
+            try {
+                localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+            } catch (error) {
+                console.error('No se pudo guardar el carrito en este navegador.', error);
+                const toast = document.getElementById('toast');
+                toast.textContent = 'No se pudo guardar el carrito en este navegador.';
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+            }
+            cartCount.textContent = cart.length;
+            cartButton.setAttribute('aria-label', `Abrir carrito, ${cart.length} artículos`);
+        }
+
+        function updateGames() {
+            const query = search.value.trim().toLocaleLowerCase('es');
+            let visible = 0;
+            cards.forEach(card => {
+                const matchesFilter = activeFilter === 'todos'
+                    || (activeFilter === 'ofertas' ? Number(card.dataset.discount) > 0 : card.dataset.tag === activeFilter);
+                const matchesSearch = card.dataset.title.includes(query);
+                const show = matchesFilter && matchesSearch;
+                card.hidden = !show;
+                if (show) visible += 1;
+            });
+            visibleCount.textContent = visible;
+            emptyState.hidden = visible > 0;
+        }
+
+        chips.forEach(chip => chip.addEventListener('click', () => {
+            chips.forEach(item => {
+                item.classList.remove('active');
+                item.setAttribute('aria-pressed', 'false');
+            });
+            chip.classList.add('active');
+            chip.setAttribute('aria-pressed', 'true');
+            activeFilter = chip.dataset.filter;
+            updateGames();
+        }));
+
+        search.addEventListener('input', updateGames);
+        document.querySelectorAll('[data-add-game]').forEach(button => {
+            button.addEventListener('click', () => agregarCarrito(Number(button.dataset.addGame)));
+        });
+        document.querySelectorAll('[data-game-detail]').forEach(card => {
+            const openDetails = () => window.location.assign(card.dataset.gameDetail);
+            card.addEventListener('click', event => {
+                if (event.target.closest('button, a, form, input, select, textarea')) return;
+                openDetails();
+            });
+            card.addEventListener('keydown', event => {
+                if (event.target === card && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    openDetails();
+                }
+            });
+        });
+        cartButton.addEventListener('click', abrirCarrito);
+        document.querySelectorAll('[data-close-dialog]').forEach(button => {
+            button.addEventListener('click', () => checkoutDialog.close());
+        });
+        checkoutDialog.addEventListener('click', event => {
+            if (event.target === checkoutDialog) checkoutDialog.close();
+        });
+        checkoutForm.addEventListener('submit', procesarCompra);
+        document.addEventListener('keydown', event => {
+            if (event.key === '/' && document.activeElement !== search) {
+                event.preventDefault();
+                search.focus();
+            }
+            if (event.key === 'Escape' && document.activeElement === search) {
+                search.value = '';
+                updateGames();
+                search.blur();
+            }
+        });
+
+        function agregarCarrito(gameId) {
+            const game = gamesById.get(gameId);
+            if (!game) return;
+            if (!cart.includes(gameId)) cart.push(gameId);
+            saveCart();
+            const toast = document.getElementById('toast');
+            toast.textContent = `${game.title} se añadió a tu carrito`;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function abrirCarrito() {
+            const itemsContainer = document.getElementById('checkout-items');
+            itemsContainer.replaceChildren();
+            let total = 0;
+            if (cart.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'cart-empty';
+                empty.textContent = 'Tu carrito está vacío. Añade un juego para comenzar.';
+                itemsContainer.append(empty);
+            }
+            cart.forEach(gameId => {
+                const game = gamesById.get(gameId);
+                if (!game) return;
+                total += game.price;
+                const item = document.createElement('div');
+                item.className = 'checkout-item';
+                const image = document.createElement('img');
+                image.src = game.image;
+                image.alt = '';
+                const details = document.createElement('div');
+                const title = document.createElement('strong');
+                title.textContent = game.title;
+                const price = document.createElement('span');
+                price.textContent = `$${game.price} MXN`;
+                details.append(title, price);
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'remove-item';
+                remove.textContent = 'Quitar';
+                remove.setAttribute('aria-label', `Quitar ${game.title} del carrito`);
+                remove.addEventListener('click', () => {
+                    cart = cart.filter(id => id !== gameId);
+                    saveCart();
+                    abrirCarrito();
+                });
+                item.append(image, details, remove);
+                itemsContainer.append(item);
+            });
+            document.getElementById('checkout-total').textContent = `$${total} MXN`;
+            document.getElementById('checkout-error').hidden = true;
+            checkoutForm.querySelector('.checkout-submit').disabled = cart.length === 0;
+            if (!checkoutDialog.open) checkoutDialog.showModal();
+        }
+
+        async function procesarCompra(event) {
+            event.preventDefault();
+            if (!checkoutForm.reportValidity()) return;
+            const submit = checkoutForm.querySelector('.checkout-submit');
+            const errorBox = document.getElementById('checkout-error');
+            submit.disabled = true;
+            errorBox.hidden = true;
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        name: checkoutForm.elements.name.value,
+                        email: checkoutForm.elements.email.value,
+                        payment_method: checkoutForm.elements.payment_method.value,
+                        game_ids: cart
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'No se pudo registrar la compra.');
+                cart = [];
+                saveCart();
+                window.location.href = `${result.library_url}?compra=ok`;
+            } catch (error) {
+                errorBox.textContent = error.message || 'Ocurrió un error al procesar la compra.';
+                errorBox.hidden = false;
+                submit.disabled = false;
+            }
+        }
+
+        saveCart();
+        const requestedGame = Number(new URLSearchParams(window.location.search).get('agregar'));
+        if (Number.isInteger(requestedGame) && gamesById.has(requestedGame)) {
+            agregarCarrito(requestedGame);
+            abrirCarrito();
+            window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        }
+    </script>
+</body>
+</html>

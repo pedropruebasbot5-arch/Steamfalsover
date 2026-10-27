@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#100b18">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="{{ juego.titulo }} — detalles, calificaciones y juegos similares en SÑEAM.">
+    <title>{{ juego.titulo }} — SÑEAM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="account-page game-detail-page">
+    <header class="site-header">
+        <nav class="navbar" aria-label="Navegación principal">
+            <a class="logo" href="/" aria-label="SÑEAM, inicio"><span class="logo-mark">S</span>ÑEAM<span class="logo-period">.</span></a>
+            <div class="nav-links"><a href="/#catalogo">Tienda</a><a href="/#ofertas">Ofertas</a><a href="{{ url_for('library') }}">Biblioteca</a></div>
+            <div class="nav-actions">
+                <a class="account-nav-button" href="{{ url_for('account') }}">{% if session.get('user_id') %}Mi cuenta{% else %}Entrar{% endif %}</a>
+                <a class="admin-nav-button" href="{{ url_for('admin') }}"><span aria-hidden="true">⚙</span> Panel</a>
+            </div>
+        </nav>
+    </header>
+    <main class="game-detail-main">
+        <a class="detail-back-link" href="/#catalogo">← Volver a la tienda</a>
+        <section class="game-detail-hero" aria-labelledby="game-title">
+            <div class="game-detail-art"><img src="{{ juego.img }}" alt="Portada de {{ juego.titulo }}"></div>
+            <div class="game-detail-info">
+                <p class="section-kicker">{{ juego.tag }} <span aria-hidden="true">·</span> PC</p>
+                <h1 id="game-title">{{ juego.titulo }}</h1>
+                <div class="detail-rating">
+                    <span class="detail-rating-stars" aria-label="{{ juego.average_rating }} de 5 estrellas">{% if juego.review_count %}{{ '★' * (juego.average_rating|round|int) }}{{ '☆' * (5 - (juego.average_rating|round|int)) }}{% else %}☆☆☆☆☆{% endif %}</span>
+                    <strong>{% if juego.review_count %}{{ juego.average_rating }} / 5{% else %}Sin calificaciones{% endif %}</strong>
+                    <a href="#resenas">{{ juego.review_count }} reseñas</a>
+                </div>
+                <p class="game-detail-description">{{ juego.desc }}</p>
+                <div class="detail-purchase-box">
+                    {% if juego.descuento > 0 %}<span class="detail-discount">-{{ juego.descuento }}% OFERTA</span>{% endif %}
+                    <div class="detail-price">
+                        {% if juego.descuento > 0 %}<del>${{ juego.precio }} MXN</del>{% endif %}
+                        <strong>${{ (juego.precio * (100 - juego.descuento) / 100) | int }} <small>MXN</small></strong>
+                    </div>
+                    <button class="btn-primary detail-buy-button" type="button" data-add-detail="{{ juego.id }}">Agregar al carrito <span aria-hidden="true">→</span></button>
+                    <p>Compra de demostración · No se realiza ningún cobro.</p>
+                </div>
+                <div class="detail-facts"><span><small>Categoría</small>{{ juego.tag }}</span><span><small>Plataforma</small>PC</span><span><small>En tu tienda</small>SÑEAM</span></div>
+            </div>
+        </section>
+
+        <section class="detail-reviews-section" id="resenas">
+            <div class="detail-section-heading">
+                <div><p class="section-kicker">La comunidad opina</p><h2>Calificaciones <span>de jugadores.</span></h2></div>
+                <div class="detail-review-score">{% if juego.review_count %}<strong>★ {{ juego.average_rating }}</strong>{% else %}<strong>—</strong>{% endif %}<span>{{ juego.review_count }} reseñas</span></div>
+            </div>
+            <div class="detail-review-layout">
+                <div class="detail-review-list">
+                    {% if resenas %}
+                    {% for resena in resenas %}
+                    <article class="detail-review-item">
+                        <div class="detail-review-avatar" aria-hidden="true">{{ resena.name[:1]|upper }}</div>
+                        <div><strong>{{ resena.name }}</strong><span class="detail-rating-stars" aria-label="{{ resena.rating }} de 5 estrellas">{{ '★' * resena.rating }}{{ '☆' * (5 - resena.rating) }}</span><time>{{ resena.created_at[:10] }}</time></div>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="detail-review-empty"><span aria-hidden="true">✦</span><strong>Aún no hay calificaciones</strong><p>¡Sé la primera persona en puntuar este juego!</p></div>
+                    {% endif %}
+                </div>
+                <aside class="rate-game-card">
+                    <p class="section-kicker">¿Ya lo jugaste?</p>
+                    <h3>Déjale estrellas.</h3>
+                    {% if session.get('user_id') %}
+                    <form class="detail-rating-form" method="post" action="{{ url_for('create_review', game_id=juego.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="return_to" value="detail">
+                        <div class="rating-stars" role="group" aria-label="Califica {{ juego.titulo }} con estrellas">
+                            {% for rating in range(1, 6) %}
+                            <button type="submit" name="rating" value="{{ rating }}" aria-label="{{ rating }} de 5 estrellas" title="{{ rating }} de 5 estrellas">★</button>
+                            {% endfor %}
+                        </div>
+                    </form>
+                    <small>Puedes cambiar tu calificación cuando quieras.</small>
+                    {% else %}
+                    <p>Inicia sesión para compartir tu calificación.</p>
+                    <a class="btn-primary" href="{{ url_for('account', modo='login') }}">Iniciar sesión <span aria-hidden="true">→</span></a>
+                    {% endif %}
+                </aside>
+            </div>
+        </section>
+
+        {% if similares %}
+        <section class="similar-games-section">
+            <div class="detail-section-heading"><div><p class="section-kicker">Más mundos por descubrir</p><h2>Juegos <span>similares.</span></h2></div><a class="detail-all-games" href="/#catalogo">Ver toda la tienda →</a></div>
+            <div class="similar-games-grid">
+                {% for similar in similares %}
+                <a class="similar-game-card" href="{{ url_for('game_detail', game_id=similar.id) }}">
+                    <img src="{{ similar.img }}" alt="Portada de {{ similar.titulo }}" loading="lazy">
+                    <div><span>{{ similar.tag }} · PC</span><strong>{{ similar.titulo }}</strong><b>${{ (similar.precio * (100 - similar.descuento) / 100) | int }} MXN</b></div>
+                    <span class="similar-arrow" aria-hidden="true">↗</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+    <footer><a class="footer-logo" href="/">SÑEAM<span>.</span></a><p>Un buen juego siempre encuentra su lugar.</p><a class="admin-link" href="{{ url_for('admin') }}">Administración</a><span>© 2026 SÑEAM · Hecho para jugar</span></footer>
+    <script>
+        document.querySelector('[data-add-detail]').addEventListener('click', () => {
+            const gameId = Number(document.querySelector('[data-add-detail]').dataset.addDetail);
+            const cartKey = 'sneam-cart-v1';
+            let cart = [];
+            try {
+                const saved = JSON.parse(localStorage.getItem(cartKey) || '[]');
+                if (Array.isArray(saved)) cart = saved.filter(Number.isInteger);
+            } catch (error) {
+                console.error('No se pudo leer el carrito guardado.', error);
+            }
+            if (!cart.includes(gameId)) cart.push(gameId);
+            try {
+                localStorage.setItem(cartKey, JSON.stringify(cart));
+            } catch (error) {
+                console.error('No se pudo guardar el carrito.', error);
+            }
+            window.location.href = `/?agregar=${gameId}`;
+        });
+    </script>
+</body>
+</html>

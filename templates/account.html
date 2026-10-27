@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#100b18">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Mi cuenta — SÑEAM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="account-page">
+    <header class="site-header">
+        <nav class="navbar" aria-label="Navegación principal">
+            <a class="logo" href="/" aria-label="SÑEAM, inicio"><span class="logo-mark">S</span>ÑEAM<span class="logo-period">.</span></a>
+            <a class="account-back" href="/">← Volver a la tienda</a>
+        </nav>
+    </header>
+    <main class="account-main account-page-main">
+        {% if user %}
+        <section class="account-dashboard">
+            <p class="section-kicker">Tu perfil de jugador</p>
+            <h1>¡Qué onda, <span>{{ user.name }}</span>!</h1>
+            <p>{{ user.email }}</p>
+            <div class="account-dashboard-actions">
+                <a class="btn-primary" href="{{ url_for('library') }}">Ver mi biblioteca <span aria-hidden="true">→</span></a>
+                <a class="btn-outline" href="/#catalogo">Seguir explorando</a>
+                <form method="post" action="{{ url_for('account_logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn-outline" type="submit">Cerrar sesión</button>
+                </form>
+            </div>
+        </section>
+        {% else %}
+        <section class="account-auth-card">
+            <span class="admin-lock" aria-hidden="true">✦</span>
+            <p class="section-kicker">Cuenta SÑEAM</p>
+            <h1>{% if mode == 'register' %}Únete a la <span>partida.</span>{% else %}Qué bueno <span>verte.</span>{% endif %}</h1>
+            <p class="account-auth-intro">Guarda tu biblioteca y comparte reseñas con la comunidad.</p>
+            <div class="account-tabs" role="tablist" aria-label="Acceso a cuenta">
+                <a class="{% if mode != 'register' %}active{% endif %}" href="{{ url_for('account', modo='login') }}">Iniciar sesión</a>
+                <a class="{% if mode == 'register' %}active{% endif %}" href="{{ url_for('account', modo='register') }}">Crear cuenta</a>
+            </div>
+            {% if error %}<p class="form-alert" role="alert">{{ error }}</p>{% endif %}
+            <form class="account-auth-form" method="post" action="{{ url_for('account') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                {% if mode == 'register' %}
+                <label>Nombre<input type="text" name="name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Tu nombre"></label>
+                {% endif %}
+                <label>Correo electrónico<input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="tu@correo.com"></label>
+                <label>Contraseña<input type="password" name="password" required {% if mode == 'register' %}minlength="8"{% endif %} autocomplete="{% if mode == 'register' %}new-password{% else %}current-password{% endif %}" placeholder="{% if mode == 'register' %}Al menos 8 caracteres{% else %}Tu contraseña{% endif %}"></label>
+                <button class="btn-primary" type="submit">{% if mode == 'register' %}Crear cuenta{% else %}Entrar{% endif %}<span aria-hidden="true">→</span></button>
+            </form>
+        </section>
+        {% endif %}
+    </main>
+    <footer>
+        <a class="footer-logo" href="/">SÑEAM<span>.</span></a>
+        <p>Tu próxima aventura empieza aquí.</p>
+        <span>© 2026 SÑEAM</span>
+    </footer>
+</body>
+</html>
